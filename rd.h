@@ -2,7 +2,6 @@
 #define RD_H
 
 #include <stdio.h>
-#include <stdlib.h>
 
 #define MAX_LEN         256
 
@@ -20,28 +19,30 @@
 #define TK_RP           28
 #define TK_EOF          0
 
-extern FILE *in;
-extern int lookahead;
-extern int error_flag;
+typedef struct {
+        FILE *in;
+        int lookahead;
+        int error_flag;
+} token_t;
 
-void next_token();
+void next_token(token_t *tp);
 
-void syntax_error();
+void syntax_error(token_t *tp);
 
-void match(int token);
+void match(token_t *tp, int token);
 
-void factor();
+void factor(token_t *tp);
 
-void item();
+void item(token_t *tp);
 
-void expression();
+void expression(token_t *tp);
 
-void assignment_statement();
+void assignment_statement(token_t *tp);
 
-void statement();
+void statement(token_t *tp);
 
-void statement_string();
+void statement_string(token_t *tp);
 
-void program();
+void program(token_t *tp);
 
 #endif

@@ -1,133 +1,129 @@
 #include "rd.h"
 
-FILE *in;
-int lookahead;
-int error_flag = 0;
-
-void next_token()
+void next_token(token_t *tp)
 {
         char line[MAX_LEN];
         int code;
 
-        if (fgets(line, MAX_LEN, in) == NULL) {
-                lookahead = TK_EOF;
+        if (fgets(line, MAX_LEN, tp->in) == NULL) {
+                tp->lookahead = TK_EOF;
                 return;
         }
 
         if (sscanf(line, "(%d", &code) == 1)
-                lookahead = code;
+                tp->lookahead = code;
         else
-                lookahead = TK_EOF;
+                tp->lookahead = TK_EOF;
 }
 
-void syntax_error()
+void syntax_error(token_t *tp)
 {
-        error_flag = 1;
+        tp->error_flag = 1;
 }
 
-void match(const int token)
+void match(token_t *tp, const int token)
 {
-        if (lookahead == token)
-                next_token();
+        if (tp->lookahead == token)
+                next_token(tp);
         else
-                syntax_error();
+                syntax_error(tp);
 }
 
-void factor()
+void factor(token_t *tp)
 {
-        if (lookahead == TK_ID) {
-                match(TK_ID);
-        } else if (lookahead == TK_NUM) {
-                match(TK_NUM);
-        } else if (lookahead == TK_LP) {
-                match(TK_LP);
-                expression();
-                match(TK_RP);
+        if (tp->lookahead == TK_ID) {
+                match(tp, TK_ID);
+        } else if (tp->lookahead == TK_NUM) {
+                match(tp, TK_NUM);
+        } else if (tp->lookahead == TK_LP) {
+                match(tp, TK_LP);
+                expression(tp);
+                match(tp, TK_RP);
         } else {
-                syntax_error();
+                syntax_error(tp);
         }
 }
 
-void item()
+void item(token_t *tp)
 {
-        factor();
+        factor(tp);
 
 
 LABEL_TK_MUL:
-        if (lookahead == TK_MUL || lookahead == TK_DIV)
+        if (tp->lookahead == TK_MUL || tp->lookahead == TK_DIV)
                 goto LABEL_LOOP_ITEM;
         return;
 
 
 LABEL_LOOP_ITEM:
-        if (lookahead == TK_MUL)
-                match(TK_MUL);
+        if (tp->lookahead == TK_MUL)
+                match(tp, TK_MUL);
         else
-                match(TK_DIV);
-        factor();
-        if (lookahead == TK_MUL || lookahead == TK_DIV)
+                match(tp, TK_DIV);
+        factor(tp);
+        if (tp->lookahead == TK_MUL || tp->lookahead == TK_DIV)
                 goto LABEL_TK_MUL;
 }
 
-void expression()
+void expression(token_t *tp)
 {
-        item();
+        item(tp);
 
 
 LABEL_TK_PLUS:
-        if (lookahead == TK_PLUS || lookahead == TK_MINUS)
+        if (tp->lookahead == TK_PLUS || tp->lookahead == TK_MINUS)
                 goto LABEL_LOOP_EXPRESSION;
         return;
 
 
 LABEL_LOOP_EXPRESSION:
-        if (lookahead == TK_PLUS)
-                match(TK_PLUS);
+        if (tp->lookahead == TK_PLUS)
+                match(tp, TK_PLUS);
         else
-                match(TK_MINUS);
+                match(tp, TK_MINUS);
 
-        item();
+        item(tp);
 
-        if (lookahead == TK_PLUS || lookahead == TK_MINUS)
+        if (tp->lookahead == TK_PLUS || tp->lookahead == TK_MINUS)
                 goto LABEL_TK_PLUS;
 }
 
-void assignment_statement()
+void assignment_statement(token_t *tp)
 {
-        match(TK_ID);
-        match(TK_ASSIGN);
-        expression();
+        match(tp, TK_ID);
+        match(tp, TK_ASSIGN);
+        expression(tp);
 }
 
-void statement()
+void statement(token_t *tp)
 {
-        assignment_statement();
+        assignment_statement(tp);
 }
 
-void statement_string()
+void statement_string(token_t *tp)
 {
-        statement();
+        statement(tp);
 
 
 LABEL_TK_SEMI:
-        if (lookahead == TK_SEMI)
+        if (tp->lookahead == TK_SEMI)
                 goto LABEL_LOOP_STATEMENT_STRING;
 
         return;
 
 
 LABEL_LOOP_STATEMENT_STRING:
-        match(TK_SEMI);
+        match(tp, TK_SEMI);
 
-        statement();
+        statement(tp);
 
-        if (lookahead == TK_SEMI)
+        if (tp->lookahead == TK_SEMI)
                 goto LABEL_TK_SEMI;
 }
 
-void program()
+void program(token_t *tp)
 {
-        match(TK_BEGIN);
-        statement_string();
-        match(TK_END);
+        match(tp, TK_BEGIN);
+        statement_string(tp);
+        match(tp, TK_END);
 }
